@@ -1,5 +1,9 @@
+import asyncio
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
+
+executor = ThreadPoolExecutor()
 
 logger = logging.getLogger(__name__)
 
@@ -8,17 +12,26 @@ class Hashmap:
     # Get function which will return me the value in that index
     # Initially let's say my array is of size 10
     # mod of 10 to get index between 0 - 9 and also have to handle chaining to make room for more values if they have the same index
-    def __init__(self, size: int = 1000, default_ttl: int = 86400) -> None:
+    def __init__(self, size: int = 1000, default_ttl: int = 60) -> None:
         self.size = size
         self.default_ttl = default_ttl
 
         self.hash_map = [[] for _ in range(self.size)]
 
     def hash_function(self, key) -> int:
+        sum_of_chars = 0
+
         if key is None:
             raise ValueError("Key must be passed")
 
-        return sum(int(char) if char.isdigit() else ord(char) for char in key) % self.size
+        if isinstance(key, str):
+            for char in key:
+                sum_of_chars += ord(char)
+        elif isinstance(key, int):
+            sum_of_chars += int(key)
+
+        return sum_of_chars % self.size
+
 
     def expire(self, ttl: int | None = None):
         active_ttl = ttl if ttl is not None else self.default_ttl
@@ -62,6 +75,7 @@ class Hashmap:
                         return item[1]
 
                     self.remove(key)
+                    return None
 
         except (TypeError) as e:
             logger.error(f"Error while retrieving value for the key {e}")
@@ -81,3 +95,22 @@ class Hashmap:
                     return
         except (ValueError) as e:
             logger.error(f"Error while deleting value for the key {e}")
+
+    def _sweep(self):
+            current_time = time.time()
+
+            for bucket in self.hash_map:
+                keys_to_delete = []
+                for item in bucket:
+                    if current_time > item[2]:
+                        keys_to_delete.append(item[0])
+
+                for key in keys_to_delete:
+                    self.remove(key)
+
+    async def check_and_delete_expired_keys(self):
+        loop = asyncio.get_event_loop()
+
+        while True:
+            await loop.run_in_executor(executor, self._sweep)
+            await asyncio.sleep(60)
