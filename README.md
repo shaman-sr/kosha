@@ -237,17 +237,3 @@ SQLite may be used later for periodic snapshots as an alternative/complement to 
 - **Future rewrite:** Go (for goroutines, `net` package, and raw TCP)
 
 ---
-
-## What This Project Teaches
-
-| Area | What I'm Learning |
-|------|-------------------|
-
-| Data Structures | Hash tables, chaining, bucket arrays |
-| Networking | TCP sockets, client-server model, protocol design |
-| Concurrency | Async I/O, thread pools, handling multiple clients |
-| Systems Design | Layered architecture, separation of concerns |
-| Persistence | Write-ahead logs, crash recovery, durability vs performance |
-| Protocol Design | Framing, parsing, request-response patterns |
-
----
